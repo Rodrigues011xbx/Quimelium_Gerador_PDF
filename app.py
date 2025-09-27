@@ -234,21 +234,37 @@ if st.button("🔥 Gerar e Baixar PDF"):
     st.markdown("### Visualização do PDF:")
 
     # ================================
-    # Pré-visualização universal (iframe para compatibilidade máxima)
+    # Pré-visualização híbrida (iframe otimizado + fallback para nova aba)
     # ================================
     pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-    pdf_display = f"""
+    
+    # Iframe otimizado com sandbox para compatibilidade com Shields
+    pdf_display_iframe = f"""
         <iframe src="data:application/pdf;base64,{pdf_base64}" 
                 width="100%" 
                 height="600px" 
                 type="application/pdf"
+                sandbox="allow-same-origin allow-popups allow-scripts"
+                allow="fullscreen"
                 style="border: 1px solid #ccc; border-radius: 5px; display: block;">
+            Seu navegador não suporta visualização de PDF inline.
         </iframe>
     """
-    st.markdown(pdf_display, unsafe_allow_html=True)
+    st.markdown(pdf_display_iframe, unsafe_allow_html=True)
 
-    # Fallback para navegadores que não suportam o embed
-    st.warning("💡 Se o preview acima não carregar (raro em navegadores modernos), use o botão de download abaixo. Funciona em Chrome, Firefox, Edge e Safari!")
+    # Fallback: Link para abrir em nova aba (funciona sem desativar Shields)
+    pdf_link_nova_aba = f'''
+        <a href="data:application/pdf;base64,{pdf_base64}" 
+           target="_blank" 
+           rel="noopener noreferrer"
+           style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; margin-top: 10px;">
+           👁️ Abrir PDF em Nova Aba (Preview Completo)
+        </a>
+    '''
+    st.markdown(pdf_link_nova_aba, unsafe_allow_html=True)
+
+    # Mensagem de orientação
+    st.info("💡 **Para Brave/Proteções Ativas**: Se o preview acima não carregar, clique no link 'Abrir em Nova Aba' – ele abre o PDF nativamente no navegador sem precisar desativar Shields. Funciona em todos os browsers!")
 
     # Botão de download nativo do Streamlit (com nome dinâmico)
     st.download_button(
