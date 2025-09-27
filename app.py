@@ -1,147 +1,245 @@
-     import streamlit as st
-     from reportlab.lib.pagesizes import A4
-     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
-     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-     from reportlab.lib.units import inch
-     from reportlab.lib import colors
-     from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-     from datetime import datetime
-     import io
-     import base64
+# app.py
+# -*- coding: utf-8 -*-
 
-     # Função para gerar PDF (adaptada do código original)
-     @st.cache_data
-     def gerar_pdf(titulo, subtitulo, autor, data_atual, introducao, corpo_texto, conclusao, dados_tabela):
-         buffer = io.BytesIO()
-         doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
-         story = []
-         styles = getSampleStyleSheet()
+from datetime import datetime
+import io
+import base64
 
-         # Estilos personalizados (mesmos do código original)
-         titulo_style = ParagraphStyle('CustomTitulo', parent=styles['Heading1'], fontSize=24, spaceAfter=30, alignment=TA_CENTER, textColor=colors.darkblue)
-         subtitulo_style = ParagraphStyle('CustomSubtitulo', parent=styles['Heading2'], fontSize=16, spaceAfter=20, alignment=TA_CENTER, textColor=colors.black)
-         corpo_style = ParagraphStyle('CustomCorpo', parent=styles['Normal'], fontSize=12, spaceAfter=12, leftIndent=0, alignment=TA_LEFT)
-         info_style = ParagraphStyle('CustomInfo', parent=styles['Normal'], fontSize=10, spaceAfter=12, alignment=TA_RIGHT, textColor=colors.gray)
-         rodape_style = ParagraphStyle('CustomRodape', parent=styles['Normal'], fontSize=9, spaceAfter=0, alignment=TA_CENTER, textColor=colors.gray)
+import streamlit as st
 
-         # Capa
-         story.append(Paragraph(titulo, titulo_style))
-         story.append(Spacer(1, 12))
-         story.append(Paragraph(subtitulo, subtitulo_style))
-         story.append(Spacer(1, 24))
-         story.append(Paragraph(f"Autor: {autor}", info_style))
-         story.append(Paragraph(f"Data: {data_atual}", info_style))
-         story.append(PageBreak())
+# ReportLab imports (robustos)
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
-         # Seções
-         story.append(Paragraph("1. Introdução", styles['Heading2']))
-         story.append(Spacer(1, 12))
-         story.append(Paragraph(introducao, corpo_style))
-         story.append(Spacer(1, 24))
+# PageBreak pode variar entre versões do reportlab
+try:
+    from reportlab.platypus import PageBreak
+except ImportError:
+    from reportlab.platypus.flowables import PageBreak
 
-         story.append(Paragraph("2. Análise de Dados", styles['Heading2']))
-         story.append(Spacer(1, 12))
-         story.append(Paragraph(corpo_texto, corpo_style))
-         story.append(Spacer(1, 18))
 
-         # Tabela
-         tabela = Table(dados_tabela, colWidths=[1.5*inch, 3*inch, 1*inch, 1.5*inch])
-         tabela.setStyle(TableStyle([
-             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-             ('FONTSIZE', (0, 0), (-1, 0), 12),
-             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-             ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-             ('GRID', (0, 0), (-1, -1), 1, colors.black),
-             ('FONTSIZE', (0, 1), (-1, -1), 10),
-         ]))
-         story.append(tabela)
-         story.append(Spacer(1, 24))
+def gerar_pdf(titulo, subtitulo, autor, data_atual_str, introducao, corpo_texto, conclusao, dados_tabela):
+    """
+    Gera um PDF e retorna bytes.
+    Recebe dados_tabela como lista de listas (primeira linha header).
+    """
+    buffer = io.BytesIO()
+    # Margens (em pontos). A4 em pontos ~ (595, 842)
+    left_margin = right_margin = 72
+    top_margin = 72
+    bottom_margin = 18
 
-         story.append(Paragraph("3. Conclusão", styles['Heading2']))
-         story.append(Spacer(1, 12))
-         story.append(Paragraph(conclusao, corpo_style))
-         story.append(Spacer(1, 24))
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=right_margin,
+        leftMargin=left_margin,
+        topMargin=top_margin,
+        bottomMargin=bottom_margin,
+    )
+    story = []
+    styles = getSampleStyleSheet()
 
-         story.append(Paragraph(f"Relatório gerado em {data_atual} por {autor}", rodape_style))
+    # Estilos personalizados
+    titulo_style = ParagraphStyle(
+        'CustomTitulo',
+        parent=styles['Heading1'],
+        fontSize=24,
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#0B3D91')
+    )
+    subtitulo_style = ParagraphStyle(
+        'CustomSubtitulo',
+        parent=styles['Heading2'],
+        fontSize=16,
+        spaceAfter=20,
+        alignment=TA_CENTER,
+        textColor=colors.black
+    )
+    corpo_style = ParagraphStyle(
+        'CustomCorpo',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=12,
+        leftIndent=0,
+        alignment=TA_LEFT
+    )
+    info_style = ParagraphStyle(
+        'CustomInfo',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=12,
+        alignment=TA_RIGHT,
+        textColor=colors.gray
+    )
+    rodape_style = ParagraphStyle(
+        'CustomRodape',
+        parent=styles['Normal'],
+        fontSize=9,
+        spaceAfter=0,
+        alignment=TA_CENTER,
+        textColor=colors.gray
+    )
 
-         # Construir PDF no buffer
-         doc.build(story)
-         buffer.seek(0)
-         return buffer.getvalue()
+    # Capa
+    story.append(Paragraph(titulo, titulo_style))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph(subtitulo, subtitulo_style))
+    story.append(Spacer(1, 24))
+    story.append(Paragraph(f"Autor: {autor}", info_style))
+    story.append(Paragraph(f"Data: {data_atual_str}", info_style))
+    story.append(PageBreak())
 
-     # Interface Streamlit
-     st.set_page_config(page_title="Gerador de Relatórios PDF", page_icon="📊", layout="wide")
+    # Seções
+    story.append(Paragraph("1. Introdução", styles['Heading2']))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph(introducao.replace('\n', '<br/>'), corpo_style))
+    story.append(Spacer(1, 24))
 
-     st.title("📊 Gerador de Relatórios PDF")
-     st.markdown("---")
+    story.append(Paragraph("2. Análise de Dados", styles['Heading2']))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph(corpo_texto.replace('\n', '<br/>'), corpo_style))
+    story.append(Spacer(1, 18))
 
-     # Sidebar para configurações (responsiva)
-     st.sidebar.header("⚙️ Configurações do Relatório")
-     titulo = st.sidebar.text_input("Título do Relatório", value="Relatório de Projeto Exemplo")
-     subtitulo = st.sidebar.text_input("Subtítulo", value="Análise e Resultados")
-     autor = st.sidebar.text_input("Autor", value="Seu Nome ou Equipe")
-     data_atual = st.sidebar.date_input("Data", value=datetime.now()).strftime("%d/%m/%Y")
+    # Tabela
+    # Ajuste de colWidths para caber na página considerando as margens
+    # Conteúdo útil = largura da página - left_margin - right_margin
+    page_width = A4[0]
+    content_width = page_width - left_margin - right_margin
+    # escolha col widths que somem <= content_width
+    col_widths = [1.2 * inch, 2.5 * inch, 1.0 * inch, 1.5 * inch]  # soma ~= 6.2 in
+    # (em pontos) verificação opcional -- se exceder, ajusta proporcionalmente
+    total_col = sum(col_widths)
+    if total_col > content_width:
+        scale = content_width / total_col
+        col_widths = [w * scale for w in col_widths]
 
-     # Colunas principais para conteúdo
-     col1, col2 = st.columns(2)
+    tabela = Table(dados_tabela, colWidths=col_widths, hAlign='LEFT')
+    tabela.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+    ]))
+    story.append(tabela)
+    story.append(Spacer(1, 24))
 
-     with col1:
-         st.subheader("1. Introdução")
-         introducao = st.text_area("Texto da Introdução", value="""Este relatório apresenta os resultados preliminares do projeto em desenvolvimento. 
-     O objetivo principal é analisar os dados coletados e propor melhorias para otimizar o processo.
-     Foram utilizados métodos de análise quantitativa e qualitativa para garantir a precisão dos resultados.""" , height=150)
+    story.append(Paragraph("3. Conclusão", styles['Heading2']))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph(conclusao.replace('\n', '<br/>'), corpo_style))
+    story.append(Spacer(1, 24))
 
-         st.subheader("2. Corpo/Análise")
-         corpo_texto = st.text_area("Texto do Corpo", value="""No corpo do relatório, detalhamos os achados principais. 
-     Por exemplo, a análise de dados revelou uma taxa de sucesso de 85% nas operações testadas. 
-     Recomenda-se a implementação de novas ferramentas para elevar essa métrica para 95%.
-     Adicionalmente, identificamos gargalos no fluxo de trabalho que serão abordados na próxima fase.""" , height=150)
+    story.append(Paragraph(f"Relatório gerado em {data_atual_str} por {autor}", rodape_style))
 
-     with col2:
-         st.subheader("3. Conclusão")
-         conclusao = st.text_area("Texto da Conclusão", value="""Em conclusão, o projeto demonstra viabilidade e potencial de impacto. 
-     As próximas etapas incluem testes em escala maior e integração com sistemas existentes. 
-     Agradecemos pela atenção e estamos abertos a feedbacks.""" , height=150)
+    # Construir PDF no buffer
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
 
-         st.subheader("Tabela de Dados")
-         st.markdown("Edite a tabela abaixo (adicione/remova linhas se necessário):")
-         # Tabela editável simples (4 colunas fixas, até 5 linhas editáveis)
-         num_linhas = st.number_input("Número de linhas na tabela (máx 10)", min_value=1, max_value=10, value=3)
-         dados_tabela = [['Item', 'Descrição', 'Valor', 'Status']]  # Cabeçalho fixo
-         for i in range(num_linhas):
-             with st.expander(f"Linha {i+1}"):
-                 item = st.text_input(f"Item {i+1}", value=f"Operação {i+1}" if i < 3 else "")
-                 desc = st.text_input(f"Descrição {i+1}", value=f"Processamento de dados" if i==0 else f"Análise estatística" if i==1 else f"Relatório final" if i==2 else "")
-                 valor = st.text_input(f"Valor {i+1}", value="R$ 1.500,00" if i==0 else "R$ 2.000,00" if i==1 else "R$ 800,00" if i==2 else "")
-                 status = st.selectbox(f"Status {i+1}", ["Concluído", "Em Andamento", "Pendente"], index=0 if i==0 else 1 if i==1 else 2)
-                 dados_tabela.append([item, desc, valor, status])
 
-     # Botão para gerar PDF
-     if st.button("🔥 Gerar e Baixar PDF", type="primary", use_container_width=True):
-         with st.spinner("Gerando PDF..."):  # Mostra loading
-             pdf_bytes = gerar_pdf(titulo, subtitulo, autor, data_atual, introducao, corpo_texto, conclusao, dados_tabela)
-         
-         st.success("PDF gerado com sucesso! 📄")
-         st.markdown("### Visualização do PDF:")
-         
-         # Embed do PDF usando iframe com base64 (visualização inline)
-         pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-         st.markdown(
-             f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="100%" height="600px" type="application/pdf" style="border: 1px solid #ccc; border-radius: 5px;"></iframe>',
-             unsafe_allow_html=True
-         )
-         
-         # Download
-         b64 = base64.b64encode(pdf_bytes).decode()
-         href = f'<a href="data:application/pdf;base64,{b64}" download="relatorio.pdf" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">⬇️ Baixar PDF</a>'
-         st.markdown(href, unsafe_allow_html=True)
-         
-         st.info("💡 Dica: Use o zoom do navegador para ver detalhes do PDF. Se o embed não carregar, o download sempre funciona!")
+# -------- Streamlit UI --------
+st.set_page_config(page_title="Interface Documents", page_icon="🧪", layout="wide")
 
-     # Rodapé
-     st.markdown("---")
-     st.markdown("*Desenvolvido com Streamlit e ReportLab. Hospedado no Streamlit Cloud.*")
-     
+st.title("📄 Gerador de Relatórios PDF")
+st.markdown("---")
+
+# Sidebar para configurações
+st.sidebar.header("⚙️ Configuração")
+titulo = st.sidebar.text_input("Título do Relatório", value="Relatório de Projeto Exemplo")
+subtitulo = st.sidebar.text_input("Subtítulo", value="Análise e Resultados")
+autor = st.sidebar.text_input("Autor", value="Seu Nome ou Equipe")
+data_obj = st.sidebar.date_input("Data", value=datetime.now().date())
+data_atual = data_obj.strftime("%d/%m/%Y")
+
+# Colunas principais para conteúdo
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("1. Introdução")
+    introducao = st.text_area(
+        "Texto da Introdução",
+        value=(
+            "Este relatório apresenta os resultados preliminares do projeto em desenvolvimento.\n"
+            "O objetivo principal é analisar os dados coletados e propor melhorias para otimizar o processo.\n"
+            "Foram utilizados métodos de análise quantitativa e qualitativa para garantir a precisão dos resultados."
+        ),
+        height=150
+    )
+
+    st.subheader("2. Corpo/Análise")
+    corpo_texto = st.text_area(
+        "Texto do Corpo",
+        value=(
+            "No corpo do relatório, detalhamos os achados principais.\n"
+            "Por exemplo, a análise de dados revelou uma taxa de sucesso de 85% nas operações testadas.\n"
+            "Recomenda-se a implementação de novas ferramentas para elevar essa métrica para 95%."
+        ),
+        height=150
+    )
+
+with col2:
+    st.subheader("3. Conclusão")
+    conclusao = st.text_area(
+        "Texto da Conclusão",
+        value=(
+            "Em conclusão, o projeto demonstra viabilidade e potencial de impacto.\n"
+            "As próximas etapas incluem testes em escala maior e integração com sistemas existentes."
+        ),
+        height=150
+    )
+
+    st.subheader("Tabela de Dados")
+    st.markdown("Edite a tabela abaixo (adicione/remova linhas se necessário):")
+    num_linhas = int(st.number_input("Número de linhas na tabela (máx 10)", min_value=1, max_value=10, value=3))
+    dados_tabela = [['Item', 'Descrição', 'Valor', 'Status']]  # cabeçalho fixo
+    for i in range(num_linhas):
+        with st.expander(f"Linha {i+1}"):
+            item_default = f"Operação {i+1}" if i < 3 else ""
+            desc_default = ("Processamento de dados" if i == 0 else
+                            "Análise estatística" if i == 1 else
+                            "Relatório final" if i == 2 else "")
+            valor_default = ("R$ 1.500,00" if i == 0 else
+                             "R$ 2.000,00" if i == 1 else
+                             "R$ 800,00" if i == 2 else "")
+            item = st.text_input(f"Item {i+1}", value=item_default, key=f"item_{i}")
+            desc = st.text_input(f"Descrição {i+1}", value=desc_default, key=f"desc_{i}")
+            valor = st.text_input(f"Valor {i+1}", value=valor_default, key=f"valor_{i}")
+            status_index = 0 if i == 0 else 1 if i == 1 else 2
+            status = st.selectbox(f"Status {i+1}", ["Concluído", "Em Andamento", "Pendente"], index=status_index, key=f"status_{i}")
+            dados_tabela.append([item, desc, valor, status])
+
+# Botão para gerar PDF
+if st.button("🔥 Gerar e Baixar PDF"):
+    with st.spinner("Gerando PDF..."):
+        pdf_bytes = gerar_pdf(titulo, subtitulo, autor, data_atual, introducao, corpo_texto, conclusao, dados_tabela)
+
+    st.success("PDF gerado com sucesso! 📄")
+    st.markdown("### Visualização do PDF:")
+
+    # Embed do PDF usando iframe com base64 (visualização inline)
+    pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+    st.markdown(
+        f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="100%" height="600px" type="application/pdf" style="border: 1px solid #ccc; border-radius: 5px;"></iframe>',
+        unsafe_allow_html=True
+    )
+
+    # Botão de download nativo do Streamlit
+    st.download_button(
+        label="⬇️ Baixar PDF",
+        data=pdf_bytes,
+        file_name="relatorio.pdf",
+        mime="application/pdf"
+    )
+
+st.markdown("---")
+st.markdown("*Desenvolvido com Streamlit e ReportLab.*")
