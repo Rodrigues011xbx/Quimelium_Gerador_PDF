@@ -150,7 +150,7 @@ def gerar_pdf(titulo, subtitulo, autor, data_atual_str, introducao, corpo_texto,
 # -------- Streamlit UI --------
 st.set_page_config(page_title="Interface Documents", page_icon="🧪", layout="wide")
 
-st.title("📄 Gerador de Relatórios PDF")
+st.title("📄 Gerador de PDF")
 st.markdown("---")
 
 # Sidebar para configurações
