@@ -248,19 +248,61 @@ if st.session_state.pdf_bytes is not None:
     with st.expander("📋 Preview e Download (Clique para Expandir)", expanded=True):
         st.success(f"PDF pronto: {st.session_state.pdf_nome}")
         
-        # Preview: Link para nova aba (funciona sem bloqueios no Brave)
+        # Gera base64 para o JS (uma vez só)
         pdf_base64 = base64.b64encode(st.session_state.pdf_bytes).decode('utf-8')
-        pdf_link_nova_aba = f'''
-            <a href="data:application/pdf;base64,{pdf_base64}" 
-               target="_blank" 
-               rel="noopener noreferrer"
-               style="background-color: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; margin-right: 10px;">
-               👁️ Preview em Nova Aba
-            </a>
-        '''
-        st.markdown(pdf_link_nova_aba, unsafe_allow_html=True)
         
-        st.markdown("*(Abre o PDF completo no navegador para visualizar/zoomar – sem desativar Shields!)*")
+        # HTML/JS com try-catch e fallback (usando components.v1.html para melhor suporte)
+        preview_html = f"""
+        <div>
+            <button id="previewBtn" onclick="openPDFInNewTab('{pdf_base64.replace("'", "\\'")}')" 
+                    style="background-color: #2196F3; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 10px;">
+                👁️ Preview em Nova Aba (Carrega Imediato)
+            </button>
+            <a href="data:application/pdf;base64,{pdf_base64}" target="_blank" rel="noopener noreferrer"
+               style="background-color: #FF9800; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                🔗 Fallback: Abrir Link (Se Botão Não Funcionar)
+            </a>
+        </div>
+        <script>
+        function openPDFInNewTab(base64Data) {{
+            try {{
+                console.log('Iniciando preview...'); // Debug no console
+                // Cria Blob do base64
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {{
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }}
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], {{ type: 'application/pdf' }});
+                
+                // Gera URL temporário do Blob
+                const blobUrl = URL.createObjectURL(blob);
+                
+                // Abre em nova aba
+                const newTab = window.open(blobUrl, '_blank');
+                
+                if (!newTab) {{
+                    alert('Popup bloqueado! Permita popups para este site.');
+                    return;
+                }}
+                
+                // Cleanup após 1 min
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+                
+                console.log('Preview aberto com sucesso!'); // Debug
+            }} catch (error) {{
+                console.error('Erro no preview:', error); // Log no console
+                alert('Erro no preview: ' + error.message + '. Use o link fallback ou download.');
+            }}
+        }}
+        </script>
+        """
+        
+        # Usa components.v1.html para melhor suporte a JS (mais estável que markdown)
+        st.components.v1.html(preview_html, height=100, scrolling=False)
+        
+        st.markdown("*(Botão: Abre PDF imediato sem F5. Link fallback: Abre se JS falhar. Funciona no Brave!)*")
         
         # Download nativo
         st.download_button(
@@ -275,4 +317,4 @@ else:
     st.info("💡 Gere um PDF primeiro para ver preview e download aqui. Persiste na aba atual!")
 
 st.markdown("---")
-st.markdown("*Desenvolvido com Streamlit e ReportLab. Persistência via session_state para melhor UX.*")
+st.markdown("*Desenvolvido com Streamlit e ReportLab. Preview com JS robusto e fallback.*")
