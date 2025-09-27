@@ -158,6 +158,10 @@ st.sidebar.header("⚙️ Configuração")
 titulo = st.sidebar.text_input("Título do Relatório", value="Relatório de Projeto Exemplo")
 subtitulo = st.sidebar.text_input("Subtítulo", value="Análise e Resultados")
 autor = st.sidebar.text_input("Autor", value="Seu Nome ou Equipe")
+nome_arquivo = st.sidebar.text_input("Nome do Arquivo PDF", value="relatorio.pdf")
+# Adiciona .pdf se não tiver
+if not nome_arquivo.lower().endswith('.pdf'):
+    nome_arquivo += '.pdf'
 data_obj = st.sidebar.date_input("Data", value=datetime.now().date())
 data_atual = data_obj.strftime("%d/%m/%Y")
 
@@ -230,23 +234,27 @@ if st.button("🔥 Gerar e Baixar PDF"):
     st.markdown("### Visualização do PDF:")
 
     # ================================
-    # Pré-visualização universal (embed)
+    # Pré-visualização universal (iframe para compatibilidade máxima)
     # ================================
     pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
     pdf_display = f"""
-        <embed src="data:application/pdf;base64,{pdf_base64}" 
-               width="100%" height="600" 
-               type="application/pdf"
-               style="border: 1px solid #ccc; border-radius: 5px;">
-        </embed>
+        <iframe src="data:application/pdf;base64,{pdf_base64}" 
+                width="100%" 
+                height="600px" 
+                type="application/pdf"
+                style="border: 1px solid #ccc; border-radius: 5px; display: block;">
+        </iframe>
     """
     st.markdown(pdf_display, unsafe_allow_html=True)
 
-    # Botão de download nativo do Streamlit
+    # Fallback para navegadores que não suportam o embed
+    st.warning("💡 Se o preview acima não carregar (raro em navegadores modernos), use o botão de download abaixo. Funciona em Chrome, Firefox, Edge e Safari!")
+
+    # Botão de download nativo do Streamlit (com nome dinâmico)
     st.download_button(
         label="⬇️ Baixar PDF",
         data=pdf_bytes,
-        file_name="relatorio.pdf",
+        file_name=nome_arquivo,
         mime="application/pdf"
     )
 
