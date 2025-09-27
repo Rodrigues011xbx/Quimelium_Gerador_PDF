@@ -221,17 +221,26 @@ with col2:
 # Botão para gerar PDF
 if st.button("🔥 Gerar e Baixar PDF"):
     with st.spinner("Gerando PDF..."):
-        pdf_bytes = gerar_pdf(titulo, subtitulo, autor, data_atual, introducao, corpo_texto, conclusao, dados_tabela)
+        pdf_bytes = gerar_pdf(
+            titulo, subtitulo, autor, data_atual,
+            introducao, corpo_texto, conclusao, dados_tabela
+        )
 
     st.success("PDF gerado com sucesso! 📄")
     st.markdown("### Visualização do PDF:")
 
-    # Embed do PDF usando iframe com base64 (visualização inline)
+    # ================================
+    # Pré-visualização universal (embed)
+    # ================================
     pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-    st.markdown(
-        f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="100%" height="600px" type="application/pdf" style="border: 1px solid #ccc; border-radius: 5px;"></iframe>',
-        unsafe_allow_html=True
-    )
+    pdf_display = f"""
+        <embed src="data:application/pdf;base64,{pdf_base64}" 
+               width="100%" height="600" 
+               type="application/pdf"
+               style="border: 1px solid #ccc; border-radius: 5px;">
+        </embed>
+    """
+    st.markdown(pdf_display, unsafe_allow_html=True)
 
     # Botão de download nativo do Streamlit
     st.download_button(
