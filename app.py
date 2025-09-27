@@ -108,12 +108,9 @@ def gerar_pdf(titulo, subtitulo, autor, data_atual_str, introducao, corpo_texto,
 
     # Tabela
     # Ajuste de colWidths para caber na página considerando as margens
-    # Conteúdo útil = largura da página - left_margin - right_margin
     page_width = A4[0]
     content_width = page_width - left_margin - right_margin
-    # escolha col widths que somem <= content_width
-    col_widths = [1.2 * inch, 2.5 * inch, 1.0 * inch, 1.5 * inch]  # soma ~= 6.2 in
-    # (em pontos) verificação opcional -- se exceder, ajusta proporcionalmente
+    col_widths = [1.2 * inch, 2.5 * inch, 1.0 * inch, 1.5 * inch]
     total_col = sum(col_widths)
     if total_col > content_width:
         scale = content_width / total_col
@@ -152,6 +149,12 @@ st.set_page_config(page_title="Interface Documents", page_icon="🧪", layout="w
 
 st.title("📄 Docs")
 st.markdown("---")
+
+# Inicializa session_state para persistir PDF
+if 'pdf_bytes' not in st.session_state:
+    st.session_state.pdf_bytes = None
+if 'pdf_nome' not in st.session_state:
+    st.session_state.pdf_nome = "relatorio.pdf"
 
 # Sidebar para configurações
 st.sidebar.header("⚙️ Configuração")
@@ -222,57 +225,54 @@ with col2:
             status = st.selectbox(f"Status {i+1}", ["Concluído", "Em Andamento", "Pendente"], index=status_index, key=f"status_{i}")
             dados_tabela.append([item, desc, valor, status])
 
-# Botão para gerar PDF
-if st.button("🔥 Gerar e Baixar PDF"):
-    with st.spinner("Gerando PDF..."):
-        pdf_bytes = gerar_pdf(
-            titulo, subtitulo, autor, data_atual,
-            introducao, corpo_texto, conclusao, dados_tabela
+# Botão para gerar PDF (limpa anterior se necessário)
+col_gen, col_limpar = st.columns(2)
+with col_gen:
+    if st.button("🔥 Gerar PDF", type="primary"):
+        with st.spinner("Gerando PDF..."):
+            pdf_bytes = gerar_pdf(
+                titulo, subtitulo, autor, data_atual,
+                introducao, corpo_texto, conclusao, dados_tabela
+            )
+            st.session_state.pdf_bytes = pdf_bytes
+            st.session_state.pdf_nome = nome_arquivo
+        st.success("PDF gerado com sucesso! 📄 Agora persiste na página.")
+with col_limpar:
+    if st.button("🗑️ Limpar PDF Anterior"):
+        st.session_state.pdf_bytes = None
+        st.session_state.pdf_nome = "relatorio.pdf"
+        st.rerun()
+
+# Seção de Preview/Download (persiste com session_state)
+if st.session_state.pdf_bytes is not None:
+    with st.expander("📋 Preview e Download (Clique para Expandir)", expanded=True):
+        st.success(f"PDF pronto: {st.session_state.pdf_nome}")
+        
+        # Preview: Link para nova aba (funciona sem bloqueios no Brave)
+        pdf_base64 = base64.b64encode(st.session_state.pdf_bytes).decode('utf-8')
+        pdf_link_nova_aba = f'''
+            <a href="data:application/pdf;base64,{pdf_base64}" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               style="background-color: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; margin-right: 10px;">
+               👁️ Preview em Nova Aba
+            </a>
+        '''
+        st.markdown(pdf_link_nova_aba, unsafe_allow_html=True)
+        
+        st.markdown("*(Abre o PDF completo no navegador para visualizar/zoomar – sem desativar Shields!)*")
+        
+        # Download nativo
+        st.download_button(
+            label="⬇️ Baixar PDF",
+            data=st.session_state.pdf_bytes,
+            file_name=st.session_state.pdf_nome,
+            mime="application/pdf",
+            use_container_width=True
         )
 
-    st.success("PDF gerado com sucesso! 📄")
-    st.markdown("### Visualização do PDF:")
-
-    # ================================
-    # Pré-visualização híbrida (iframe otimizado + fallback para nova aba)
-    # ================================
-    pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-    
-    # Iframe otimizado com sandbox para compatibilidade com Shields
-    pdf_display_iframe = f"""
-        <iframe src="data:application/pdf;base64,{pdf_base64}" 
-                width="100%" 
-                height="600px" 
-                type="application/pdf"
-                sandbox="allow-same-origin allow-popups allow-scripts"
-                allow="fullscreen"
-                style="border: 1px solid #ccc; border-radius: 5px; display: block;">
-            Seu navegador não suporta visualização de PDF inline.
-        </iframe>
-    """
-    st.markdown(pdf_display_iframe, unsafe_allow_html=True)
-
-    # Fallback: Link para abrir em nova aba (funciona sem desativar Shields)
-    pdf_link_nova_aba = f'''
-        <a href="data:application/pdf;base64,{pdf_base64}" 
-           target="_blank" 
-           rel="noopener noreferrer"
-           style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; margin-top: 10px;">
-           👁️ Abrir PDF em Nova Aba (Preview Completo)
-        </a>
-    '''
-    st.markdown(pdf_link_nova_aba, unsafe_allow_html=True)
-
-    # Mensagem de orientação
-    st.info("💡 **Para Brave/Proteções Ativas**: Se o preview acima não carregar, clique no link 'Abrir em Nova Aba' – ele abre o PDF nativamente no navegador sem precisar desativar Shields. Funciona em todos os browsers!")
-
-    # Botão de download nativo do Streamlit (com nome dinâmico)
-    st.download_button(
-        label="⬇️ Baixar PDF",
-        data=pdf_bytes,
-        file_name=nome_arquivo,
-        mime="application/pdf"
-    )
+else:
+    st.info("💡 Gere um PDF primeiro para ver preview e download aqui. Persiste na aba atual!")
 
 st.markdown("---")
-st.markdown("*Desenvolvido com Streamlit e ReportLab.*")
+st.markdown("*Desenvolvido com Streamlit e ReportLab. Persistência via session_state para melhor UX.*")
