@@ -145,44 +145,57 @@ def gerar_pdf(titulo, subtitulo, autor, data_atual_str, introducao, corpo_texto,
 
 
 # -------- Estilização CSS Moderna e Responsiva --------
+
 css = """
+
 <style>
-    /* Tema Geral: Moderno, Clean, Azul Escuro como Primário */
+
+    /* Variáveis para tema claro */
     :root {
-        --primary-color:#000; /* Azul corporativo */
-        --secondary-color: #000; /* Azul claro para botões */
-        --accent-color: #FF9800; /* Laranja para destaques */
-        --bg-color: #F8FAFC; /* Fundo claro */
-        --card-bg: #FFF; /* Cards brancos */
-        --text-primary: #000000; /* Texto preto forte */
-        --text-secondary: #718096; /* Texto cinza */
-        --border-color: #E2E8F0; /* Bordas suaves */
-        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --primary-color: #000000;
+        --secondary-color: #000000;
+        --accent-color: #FF9800;
+        --bg-color: #F8FAFC;
+        --card-bg: #FFFFFF;
+        --text-primary: #000000;
+        --text-secondary: #718096;
+        --border-color: #E2E8F0;
+        --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
     }
 
-    /* Configurações Globais */
-    body {
+    /* Variáveis para tema escuro */
+    body.streamlit-dark {
+        --primary-color: #FFFFFF;
+        --secondary-color: #BBBBBB;
+        --accent-color: #FFB74D;
+        --bg-color: #0E1117;
+        --card-bg: #1A1D23;
+        --text-primary: #E0E0E0;
+        --text-secondary: #A0A0A0;
+        --border-color: #333842;
+        --shadow: 0 4px 6px -1px rgba(255,255,255,0.05), 0 2px 4px -1px rgba(255,255,255,0.03);
+        --shadow-lg: 0 10px 15px -3px rgba(255,255,255,0.07), 0 4px 6px -2px rgba(255,255,255,0.04);
+    }
+
+    /* Globais */
+    body, .stApp {
         background-color: var(--bg-color);
         color: var(--text-primary);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    .stApp {
-        background-color: var(--bg-color);
-    }
-
-    /* Título Principal */
     h1 {
         color: var(--primary-color) !important;
         font-size: 2.5rem !important;
         font-weight: 700 !important;
         text-align: center;
         margin-bottom: 0.5rem !important;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: color 0.3s ease;
     }
 
-    /* Subtítulos e Headers */
     .stMarkdown h2, .stSubheader {
         color: var(--primary-color) !important;
         font-size: 1.5rem !important;
@@ -190,29 +203,73 @@ css = """
         border-bottom: 2px solid var(--border-color);
         padding-bottom: 0.5rem;
         margin-bottom: 1rem !important;
+        transition: color 0.3s ease, border-color 0.3s ease;
     }
 
-    /* Sidebar Estilizada */
-    .css-1d391kg { /* Sidebar container */
-        background: linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%);
+    /* Sidebar */
+    .css-1d391kg {
+        background: linear-gradient(180deg, var(--card-bg) 0%, var(--bg-color) 100%);
         border-right: 1px solid var(--border-color);
         box-shadow: var(--shadow);
+        transition: background 0.3s ease, border-color 0.3s ease;
     }
 
-    .css-1d391kg .stTextInput > label, .css-1d391kg .stDateInput > label {
+    /* Labels inputs, selects, date inputs */
+    .css-1d391kg .stTextInput > label,
+    .css-1d391kg .stDateInput > label,
+    .css-1d391kg .stSelectbox > label {
         color: var(--text-primary) !important;
         font-weight: 600;
+        background-color: transparent;
+        padding: 0 4px;
+        border-radius: 4px;
+        display: inline-block;
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    .css-1d391kg input, .css-1d391kg .stDateInput input {
+    /* Inputs, textareas, selects */
+    .css-1d391kg input,
+    .css-1d391kg .stDateInput input,
+    .stTextArea textarea,
+    .stNumberInput input,
+    .stSelectbox select {
         border: 1px solid var(--border-color) !important;
         border-radius: 8px !important;
         padding: 0.75rem !important;
-        background-color: #FFFFFF !important;
-        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        background-color: var(--card-bg) !important;
+        color: var(--text-primary) !important;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        font-family: inherit;
+        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
     }
 
-    /* Colunas e Cards */
+    /* Placeholder */
+    .css-1d391kg input::placeholder,
+    .stTextArea textarea::placeholder,
+    .stNumberInput input::placeholder,
+    .stSelectbox select::placeholder {
+        color: var(--text-secondary) !important;
+        opacity: 1;
+        transition: color 0.3s ease;
+    }
+
+    /* Focus */
+    .css-1d391kg input:focus,
+    .css-1d391kg .stDateInput input:focus,
+    .stTextArea textarea:focus,
+    .stNumberInput input:focus,
+    .stSelectbox select:focus {
+        border-color: var(--accent-color) !important;
+        outline: none !important;
+        box-shadow: 0 0 5px var(--accent-color);
+        background-color: var(--card-bg) !important;
+        color: var(--text-primary) !important;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    /* Cards */
     .stColumns > div {
         background-color: var(--card-bg);
         border-radius: 12px;
@@ -220,45 +277,33 @@ css = """
         box-shadow: var(--shadow);
         margin: 0.5rem;
         border: 1px solid var(--border-color);
+        transition: background-color 0.3s ease, border-color 0.3s ease;
     }
 
-    /* Text Areas e Inputs */
-    .stTextArea > label, .stNumberInput > label, .stSelectbox > label {
-        color: var(--text-primary) !important;
-        font-weight: 600;
-        font-size: 1rem;
-    }
-
-    .stTextArea textarea, .stNumberInput input, .stSelectbox select {
-        border: 1px solid var(--border-color) !important;
-        border-radius: 8px !important;
-        padding: 0.75rem !important;
-        background-color: #FFFFFF !important;
-        box-shadow: var(--shadow);
-        font-family: inherit;
-    }
-
-    .stTextArea textarea {
-        min-height: 120px !important;
-        resize: vertical;
-    }
-
-    /* Expanders para Tabela */
+    /* Expanders */
     .stExpander {
         background-color: var(--card-bg) !important;
         border: 1px solid var(--border-color) !important;
         border-radius: 8px !important;
         box-shadow: var(--shadow) !important;
         margin: 0.5rem 0 !important;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
     }
 
     .stExpander > div > label {
         color: var(--primary-color) !important;
         font-weight: 600 !important;
         font-size: 1.1rem !important;
+        background-color: transparent;
+        padding: 0 4px;
+        border-radius: 4px;
+        display: inline-block;
+        cursor: pointer;
+        user-select: none;
+        transition: color 0.3s ease, background-color 0.3s ease;
     }
 
-    /* Botões */
+    /* Buttons */
     .stButton > button {
         background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%) !important;
         color: white !important;
@@ -270,6 +315,7 @@ css = """
         box-shadow: var(--shadow) !important;
         transition: all 0.3s ease !important;
         width: 100% !important;
+        cursor: pointer;
     }
 
     .stButton > button:hover {
@@ -286,6 +332,7 @@ css = """
         font-weight: 600 !important;
         box-shadow: var(--shadow) !important;
         transition: all 0.3s ease !important;
+        cursor: pointer;
     }
 
     .stDownloadButton > button:hover {
@@ -293,7 +340,7 @@ css = """
         box-shadow: var(--shadow-lg) !important;
     }
 
-    /* Mensagens de Status */
+    /* Status messages */
     .stSuccess {
         background-color: #D4EDDA !important;
         border: 1px solid #C3E6CB !important;
@@ -301,6 +348,7 @@ css = """
         color: #155724 !important;
         padding: 1rem !important;
         box-shadow: var(--shadow);
+        transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     .stInfo {
@@ -310,9 +358,10 @@ css = """
         color: #004085 !important;
         padding: 1rem !important;
         box-shadow: var(--shadow);
+        transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    /* Preview Section */
+    /* Preview */
     .preview-container {
         background-color: var(--card-bg) !important;
         border-radius: 12px !important;
@@ -320,6 +369,7 @@ css = """
         box-shadow: var(--shadow-lg) !important;
         margin: 1rem 0 !important;
         border: 1px solid var(--border-color) !important;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
     }
 
     .preview-header {
@@ -328,19 +378,21 @@ css = """
         color: var(--primary-color);
         font-size: 1.2rem;
         font-weight: 600;
+        transition: color 0.3s ease;
     }
 
-    /* PDF.js Container Responsivo */
+    /* PDF.js container */
     #pdf-viewer {
         width: 100%;
         height: 600px;
         border: 1px solid var(--border-color);
         border-radius: 8px;
         overflow: hidden;
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        transition: border-color 0.3s ease;
     }
 
-    /* Botão de Preview em Nova Aba */
+    /* Preview button */
     .preview-btn {
         background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%) !important;
         color: white !important;
@@ -353,11 +405,58 @@ css = """
         transition: all 0.3s ease !important;
         width: 100% !important;
         margin-bottom: 1rem;
+        cursor: pointer;
     }
 
     .preview-btn:hover {
         transform: translateY(-2px) !important;
         box-shadow: var(--shadow-lg) !important;
+    }
+
+    /* Correções específicas para selects e labels no tema escuro */
+    body.streamlit-dark {
+        /* Label do select: fundo escuro e texto claro SEMPRE quando aberto */
+        .css-1d391kg .stSelectbox > label {
+            background-color: var(--card-bg) !important;
+            color: var(--text-primary) !important;
+            padding: 0 8px !important;
+            border-radius: 6px !important;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Quando o select está aberto (dropdown ativo) */
+        .css-1d391kg .stSelectbox[aria-expanded="true"] > label {
+            background-color: var(--card-bg) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Quando o select está focado (clicado) */
+        .css-1d391kg .stSelectbox:focus-within > label {
+            background-color: var(--card-bg) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Quando o mouse está sobre o label */
+        .css-1d391kg .stSelectbox > label:hover {
+            background-color: var(--accent-color) !important;
+            color: #000000 !important; /* texto escuro para contraste no hover */
+        }
+
+        /* Para o expander label */
+        .stExpander > div > label {
+            background-color: var(--card-bg) !important;
+            color: var(--text-primary) !important;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .stExpander > div > label:hover {
+            background-color: var(--accent-color) !important;
+            color: #000000 !important;
+        }
     }
 
     /* Responsividade */
@@ -380,13 +479,14 @@ css = """
         }
     }
 
-    /* Spinner Customizado */
+    /* Spinner */
     .stSpinner > div {
         border-color: var(--secondary-color) !important;
+        transition: border-color 0.3s ease;
     }
-    
-    
+
 </style>
+
 """
 
 # Injeta o CSS
