@@ -42,10 +42,13 @@ http://localhost:8501/
 
 
 
----
+```
 
 ### 📄 requirements.txt
 
-```txt
-## streamlit==1.39.0
-## reportlab==4.2.2
+
+
+* streamlit==1.39.0
+* reportlab==4.2.2
+
+
